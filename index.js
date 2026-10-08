@@ -1,29 +1,12 @@
 const express = require('express');
+const db = require('./config/db');
+require('dotenv').config();
 
 const app = express();
 
 app.use(express.json());
 
-// Arreglo de productos
-let productos = [
-    {
-        id: 1,
-        nombre: "Café Americano",
-        precio: 45
-    },
-    {
-        id: 2,
-        nombre: "Frappé de Chocolate",
-        precio: 65
-    },
-    {
-        id: 3,
-        nombre: "Pastel de Chocolate",
-        precio: 55
-    }
-];
-
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Ruta principal
 app.get('/', (req, res) => {
@@ -31,73 +14,144 @@ app.get('/', (req, res) => {
 });
 
 // GET - Obtener todos los productos
-app.get('/api/productos', (req, res) => {
-    res.json(productos);
+app.get('/api/productos', async (req, res) => {
+    try {
+        const [productos] = await db.query('SELECT * FROM productos');
+        res.json(productos);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            mensaje: 'Error al obtener los productos'
+        });
+    }
 });
 
 // GET - Obtener un producto por ID
-app.get('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const producto = productos.find(p => p.id === id);
+app.get('/api/productos/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
 
-    if (!producto) {
-        return res.status(404).json({
-            mensaje: "Producto no encontrado"
+        const [productos] = await db.query(
+            'SELECT * FROM productos WHERE id = ?',
+            [id]
+        );
+
+        if (productos.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        res.json(productos[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            mensaje: 'Error al obtener el producto'
         });
     }
-
-    res.json(producto);
 });
 
 // POST - Crear un producto
-app.post('/api/productos', (req, res) => {
-    const nuevoProducto = {
-        id: productos.length + 1,
-        nombre: req.body.nombre,
-        precio: req.body.precio
-    };
+app.post('/api/productos', async (req, res) => {
+    try {
+        const { nombre, precio, descripcion } = req.body;
 
-    productos.push(nuevoProducto);
+        const [resultado] = await db.query(
+            'INSERT INTO productos (nombre, precio, descripcion) VALUES (?, ?, ?)',
+            [nombre, precio, descripcion]
+        );
 
-    res.status(201).json(nuevoProducto);
+        const [producto] = await db.query(
+            'SELECT * FROM productos WHERE id = ?',
+            [resultado.insertId]
+        );
+
+        res.status(201).json(producto[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            mensaje: 'Error al crear el producto'
+        });
+    }
 });
 
 // PUT - Actualizar un producto
-app.put('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const producto = productos.find(p => p.id === id);
+app.put('/api/productos/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { nombre, precio, descripcion } = req.body;
 
-    if (!producto) {
-        return res.status(404).json({
-            mensaje: "Producto no encontrado"
+        const [resultado] = await db.query(
+            'UPDATE productos SET nombre = ?, precio = ?, descripcion = ? WHERE id = ?',
+            [nombre, precio, descripcion, id]
+        );
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        const [producto] = await db.query(
+            'SELECT * FROM productos WHERE id = ?',
+            [id]
+        );
+
+        res.json(producto[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            mensaje: 'Error al actualizar el producto'
         });
     }
-
-    producto.nombre = req.body.nombre;
-    producto.precio = req.body.precio;
-
-    res.json(producto);
 });
 
-app.delete('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const indice = productos.findIndex(p => p.id === id);
+// DELETE - Eliminar un producto
+app.delete('/api/productos/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
 
-    if (indice === -1) {
-        return res.status(404).json({
-            mensaje: "Producto no encontrado"
+        const [productos] = await db.query(
+            'SELECT * FROM productos WHERE id = ?',
+            [id]
+        );
+
+        if (productos.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        await db.query(
+            'DELETE FROM productos WHERE id = ?',
+            [id]
+        );
+
+        res.json({
+            mensaje: 'Producto eliminado correctamente',
+            producto: productos[0]
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            mensaje: 'Error al eliminar el producto'
         });
     }
-
-    const productoEliminado = productos.splice(indice, 1)[0];
-
-    res.json({
-        mensaje: "Producto eliminado correctamente",
-        producto: productoEliminado
-    });
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+app.listen(PORT, async () => {
+    try {
+        const connection = await db.getConnection();
+        console.log('Conectado exitosamente a la base de datos');
+        connection.release();
+
+        console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+    } catch (error) {
+        console.error('Error de conexión a la base de datos:', error.message);
+    }
 });
