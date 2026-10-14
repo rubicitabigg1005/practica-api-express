@@ -1,0 +1,106 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f1eb;
+    color: #33251f;
+    min-height: 100vh;
+}
+
+header {
+    background: #5b3828;
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+}
+
+header h1 {
+    margin-bottom: 10px;
+    font-size: 30px;
+}
+
+header p {
+    color: #f1dfd2;
+}
+
+main {
+    width: 90%;
+    max-width: 1100px;
+    margin: 30px auto;
+    display: grid;
+    gap: 25px;
+}
+
+.panel {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.panel h2 {
+    color: #5b3828;
+    margin-bottom: 20px;
+}
+
+.tabla-contenedor {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th {
+    background: #7b513d;
+    color: white;
+    text-align: left;
+}
+
+th, td {
+    padding: 13px;
+    border-bottom: 1px solid #e6ddd5;
+}
+
+tbody tr:hover {
+    background: #faf4ee;
+}
+
+#mensaje {
+    margin-bottom: 10px;
+    color: #765c4c;
+}
+
+#miGrafica {
+    width: 100%;
+    max-height: 400px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #765c4c;
+}
+
+@media (max-width: 600px) {
+    main {
+        width: 95%;
+    }
+
+    .panel {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+}
+
